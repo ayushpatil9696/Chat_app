@@ -58,7 +58,7 @@ export const login = async (req, res) => {
     
         const isPasswordCorrect = await bcrypt.compare(password, user.password);
         if(!isPasswordCorrect){
-            return res.status(400).json({ message: "Incorrect Password"})
+            return res.status(400).json({ message: "Invalid credentials"})
         }
     
         generateToken(user._id, res);
@@ -82,5 +82,37 @@ export const logout = (req, res) => {
     } catch (error){
         console.log("Error in logout controller", error.message);
         res.status(500).json({ message: "Internal server error"})
+    }
+}
+
+export const updateProfile = async (req, res) => {
+    try {
+        const { profilePic} = req.body;
+        const userId = req.user._id;
+
+        if (!profilePic) {
+            return res.status(400).json({ message: "Please provide a profile picture" });
+        }
+
+        const uploadResponse = await cloudinary.uploader.upload(profilePic);
+        const updateUser = await User.findByIdAndUpdate(
+            userId,
+            { profilePic: uploadResponse.secure_url},
+            {new: true}
+        );
+
+        res.status(200).json(updateUser);
+    } catch (error) {
+        console.log("Error in update profile controller", error.message);
+        res.status(500).json({ message: "Internal server error"});
+    }
+}
+
+export const checkAuth = (req, res) => {
+    try {
+        res.status(200).json(req.user);
+    } catch (error) {
+        console.log("Error in check auth controller", error.message);
+        res.status(500).json({ message: "Internal server errror"});
     }
 }
